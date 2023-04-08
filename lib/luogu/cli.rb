@@ -33,7 +33,7 @@ module Luogu
     end
 
     subcommands['gen'] = Proc.new do |args|
-      json = JSON.parse File.read(args.first)      
+      json = JSON.parse File.read(args.first), symbolize_names: true   
       chatgpt = ChatGPT.save(json, args.last)
     end
 
