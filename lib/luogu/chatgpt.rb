@@ -62,21 +62,6 @@ module Luogu
       @_puts_method.call message
     end
 
-    def save(history, file_path)
-      text = ""
-      role_map = {"user" => "@u", "assistant" => "@a", "system" => "@s"}
-      history.each do |item|
-        text += role_map[item[:role]]
-        text += "\n"
-        text += item[:content]
-        text += "\n\n"
-      end
-      File.open(file_path, 'w') do |f|
-        f.write(text)
-      end
-      puts "已经保存文件到 #{file_path}"
-    end
-
     def run
       loop do
         # 从命令行读取输入
@@ -85,8 +70,8 @@ module Luogu
         # 根据用户输入执行相应的操作
         case input
         when "save"
-          self.save @row_history, "./prompt.row_history.md"
-          self.save @history.to_a, "./prompt.history.md"
+          self.class.save @row_history, "./prompt.row_history.md"
+          self.class.save @history.to_a, "./prompt.history.md"
         when "row history"
           p @row_history
         when "history"
@@ -97,6 +82,23 @@ module Luogu
         else
           self.puts self.chat(input)
         end
+      end
+    end
+
+    class << self
+      def save(history, file_path)
+        text = ""
+        role_map = {"user" => "@u", "assistant" => "@a", "system" => "@s"}
+        history.each do |item|
+          text += role_map[item[:role]]
+          text += "\n"
+          text += item[:content]
+          text += "\n\n"
+        end
+        File.open(file_path, 'w') do |f|
+          f.write(text)
+        end
+        puts "已经保存文件到 #{file_path}"
       end
     end
   end

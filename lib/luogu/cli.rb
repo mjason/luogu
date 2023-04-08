@@ -11,6 +11,7 @@ module Luogu
         puts """
         luogu build <file> -> 编译prompt
         luogu run <file> -> 测试 prompt
+        luogu gen <file> <target> -> 根据 json 生成 prompt 文件
         """
         exit
       end
@@ -29,6 +30,11 @@ module Luogu
     subcommands['run'] = Proc.new do |args|
       chatgpt = ChatGPT.new(args.first)
       chatgpt.run
+    end
+
+    subcommands['gen'] = Proc.new do |args|
+      json = JSON.parse File.read(args.first)      
+      chatgpt = ChatGPT.save(json, args.last)
     end
 
     if subcommands.key?(ARGV.first)
