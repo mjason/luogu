@@ -44,7 +44,7 @@ module Luogu
 
       chatgpt = ChatGPT.new(args.first)
 
-      messages = YAML.load(promtpt_test_file)
+      messages = YAML.load_file(promtpt_test_file)
       chatgpt.playload messages
     end
 

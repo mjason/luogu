@@ -2,6 +2,7 @@ require "openai"
 require 'dotenv/load'
 require "tty-prompt"
 require 'json'
+require 'yaml'
 require 'optparse'
 
 require_relative 'history_queue'
