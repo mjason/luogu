@@ -10,10 +10,14 @@
 - 如果需要在终端显示markdown，需要 [glow](https://github.com/charmbracelet/glow)
 
 ### 使用
-- luogu build <file> 编译成对应的json
-- luogu run <file> 测试prompt
-- luogu gen <prompt.json file> <target.md> 用来逆向生成md文件的命令
-- luogu test <file> <yml> 用来跑自动化测试 yaml 一行一句话
+```Bash
+Commands:
+  luogu build PROMPT_FILE [TARGET_FILE]                      # 编译 Prompt.md 成能够提交给 ChatGPT API 的 messages. 默认输出为 <同文件名>.json
+  luogu generate JSON_FILE [PROMPT_FILE]                     # 根据 ChatGPT messages JSON 来生成 Prompt.md
+  luogu run PROMPT_FILE                                      # 编译 Prompt.md 成能够提交给 ChatGPT API 的 messages. 默认输出为 <同文件名>.json
+  luogu test [PROMPT_FILE] [TEST_FILE]                       # 测试 Prompt 文件
+  luogu version                                              # 打印版本
+```
 
 你可以在项目目录的.env中设置下面的环境变量，或者直接系统设置
 ```

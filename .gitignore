@@ -8,5 +8,7 @@
 /tmp/
 .env
 prompt.json
+_prompt.json
 prompt.md
-new_prompt.json
+prompt.test.yml
+/out

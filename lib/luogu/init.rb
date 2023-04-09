@@ -3,7 +3,8 @@ require 'dotenv/load'
 require "tty-prompt"
 require 'json'
 require 'yaml'
-require 'optparse'
+require "dry/cli"
+require 'fileutils'
 
 require_relative 'history_queue'
 require_relative "prompt_parser"

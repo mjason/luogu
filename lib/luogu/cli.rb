@@ -1,58 +1,88 @@
 module Luogu
+  module CLI
+    module Commands
+      extend Dry::CLI::Registry
+      
+      class Version < Dry::CLI::Command
+        desc "打印版本"
+
+        def call(*)
+          puts Luogu::VERSION
+        end
+      end
+
+      class Build < Dry::CLI::Command
+
+        desc "编译 Prompt.md 成能够提交给 ChatGPT API 的 messages. 默认输出为 <同文件名>.json"
+        argument :prompt_file, type: :string, required: true, deec: "Prompt文件, 使用markdown书写"
+        argument :target_file, type: :string, required: false, deec: "输出 JSON 文件"
+
+        def call(prompt_file: nil, target_file: nil, **)
+          target_file ||=  prompt_file.sub(File.extname(prompt_file), ".json")
+          data = PromptParser.new(prompt_file).to_json
+          File.open(target_file, 'w') do |f|
+            f.write(data)
+          end
+        end
+
+      end
+
+      class Run < Dry::CLI::Command
+
+        desc "编译 Prompt.md 成能够提交给 ChatGPT API 的 messages. 默认输出为 <同文件名>.json"
+        argument :prompt_file, type: :string, required: true, desc: "Prompt文件, 使用markdown书写"
+        option :out, type: :string, default: ".", desc: "保存历史时存放的目录，默认为当前目录"
+
+        def call(prompt_file: nil, **options)
+          chatgpt = ChatGPT.new(prompt_file, options.fetch(:out))
+          chatgpt.run
+        end
+
+      end
+
+      class Generate < Dry::CLI::Command
+
+        desc "根据 ChatGPT messages JSON 来生成 Prompt.md"
+        argument :json_file, type: :string, required: true, deec: "ChatGPT 生成的 messages json 文件"
+        argument :prompt_file, type: :string, required: false, deec: "要输出的Prompt文件路径, 默认生成 <同名>.md"
+
+        def call(json_file: nil, prompt_file: nil, **)
+          json = JSON.parse(File.read(json_file), symbolize_names: true)
+          prompt_file ||=  json_file.sub(File.extname(json_file), ".md")
+
+          chatgpt = ChatGPT.save(json, prompt_file)
+        end
+
+      end
+
+      class Test < Dry::CLI::Command
+
+        desc "测试 Prompt 文件"
+        argument :prompt_file, type: :string, require: true, desc: "输出 Prompt 文件"
+        argument :test_file, type: :string, require: false, desc: "测试文件, 使用 YAML 文件, 一个字符串数组。默认为 同名.test.yml"
+        option :out, type: :string, default: ".", desc: "保存测试历史时存放的目录，默认为当前目录"
+
+        def call(prompt_file: nil, test_file:nil, **options)
+          test_file ||= prompt_file.sub(File.extname(prompt_file), ".test.yml")
+
+          chatgpt = ChatGPT.new(prompt_file, options.fetch(:out))
+          messages = YAML.load_file(test_file)
+          chatgpt.playload messages
+        end
+
+      end
+
+      register "version", Version, aliases: ["v", "-v", "--version"]
+      register "build", Build, aliases: ["b"]
+      register "run", Run, aliases: ["r"]
+      register "generate", Generate, aliases: ["g"]
+      register "test", Test, aliases: ["t"]
+
+    end
+  end
+
   module_function
   def cli
-    options = {}
-    subcommands = {}
-
-    OptionParser.new do |opts|
-      opts.banner = "Usage: luogu [command]"
-
-      opts.on("-h", "--help", "Prints help") do
-        puts """
-        luogu build <file> -> 编译prompt
-        luogu run <file> -> 测试 prompt
-        luogu gen <file> <target> -> 根据 json 生成 prompt 文件
-        luogu test <file> <test_file.yml> -> 根据 yaml 来对 prompt 进行测试
-        """
-        exit
-      end
-
-    end.parse!
-
-   
-    subcommands['build'] = Proc.new do |args|
-      data = PromptParser.new(args.first).to_json
-      target_path = args[1] || "./prompt.json"
-      File.open(target_path, 'w') do |f|
-        f.write(data)
-      end
-    end
-
-    subcommands['run'] = Proc.new do |args|
-      chatgpt = ChatGPT.new(args.first)
-      chatgpt.run
-    end
-
-    subcommands['gen'] = Proc.new do |args|
-      json = JSON.parse File.read(args.first), symbolize_names: true   
-      chatgpt = ChatGPT.save(json, args.last)
-    end
-
-    subcommands['test'] = Proc.new do |args|
-      promtpt_file = args.first
-      promtpt_test_file = args.last
-
-      chatgpt = ChatGPT.new(args.first)
-
-      messages = YAML.load_file(promtpt_test_file)
-      chatgpt.playload messages
-    end
-
-    if subcommands.key?(ARGV.first)
-      subcommands[ARGV.first].call(ARGV[1..-1])
-    else
-      puts "Invalid command. Use -h or --help for usage information."
-    end
-
+    Dry::CLI.new(Luogu::CLI::Commands).call
   end
 end

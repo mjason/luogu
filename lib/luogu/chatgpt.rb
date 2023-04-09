@@ -1,9 +1,12 @@
 module Luogu
   class ChatGPT
-    def initialize(file)
+    def initialize(file, history_path='.')
       @temperature = ENV.fetch('OPENAI_TEMPERATURE', '0.7').to_f
       @limit_history = ENV.fetch('OPENAI_LIMIT_HISTORY', '6').to_i * 2
       
+      @history_path = history_path
+      @prompt_file = file
+
       @prompt = PromptParser.new(file)
       @row_history = []
       @history = HistoryQueue.new @limit_history
@@ -70,8 +73,9 @@ module Luogu
         # 根据用户输入执行相应的操作
         case input
         when "save"
-          self.class.save @row_history, "./prompt.row_history.md"
-          self.class.save @history.to_a, "./prompt.history.md"
+          file_name = File.basename(@prompt_file, ".*")
+          self.class.save @row_history, File.join(@history_path, "#{file_name}.row_history.md")
+          self.class.save @history.to_a, File.join(@history_path, "#{file_name}.history.md")
         when "row history"
           p @row_history
         when "history"
@@ -91,8 +95,10 @@ module Luogu
         self.puts self.chat(message)
       end
       now = Time.now.to_i
-      self.class.save @row_history, "./prompt.row_history.test-#{now}.md"
-      self.class.save @history.to_a, "./prompt.history.test-#{now}.md"
+      file_name = File.basename(@prompt_file, ".*")
+
+      self.class.save @row_history, File.join(@history_path, "#{file_name}-#{now}.row_history.md")
+      self.class.save @history.to_a, File.join(@history_path, "#{file_name}-#{now}.history.md")
     end
 
     class << self
@@ -105,6 +111,7 @@ module Luogu
           text += item[:content]
           text += "\n\n"
         end
+        FileUtils.mkdir_p(File.dirname(file_path))
         File.open(file_path, 'w') do |f|
           f.write(text)
         end
