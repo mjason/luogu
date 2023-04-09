@@ -13,6 +13,7 @@
 - luogu build <file> 编译成对应的json
 - luogu run <file> 测试prompt
 - luogu gen <prompt.json file> <target.md> 用来逆向生成md文件的命令
+- luogu test <file> <yml> 用来跑自动化测试 yaml 一行一句话
 
 你可以在项目目录的.env中设置下面的环境变量，或者直接系统设置
 ```

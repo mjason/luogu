@@ -12,6 +12,7 @@ module Luogu
         luogu build <file> -> 编译prompt
         luogu run <file> -> 测试 prompt
         luogu gen <file> <target> -> 根据 json 生成 prompt 文件
+        luogu test <file> <test_file.yml> -> 根据 yaml 来对 prompt 进行测试
         """
         exit
       end
@@ -35,6 +36,16 @@ module Luogu
     subcommands['gen'] = Proc.new do |args|
       json = JSON.parse File.read(args.first), symbolize_names: true   
       chatgpt = ChatGPT.save(json, args.last)
+    end
+
+    subcommands['test'] = Proc.new do |args|
+      promtpt_file = args.first
+      promtpt_test_file = args.last
+
+      chatgpt = ChatGPT.new(args.first)
+
+      messages = YAML.load(promtpt_test_file)
+      chatgpt.playload messages
     end
 
     if subcommands.key?(ARGV.first)

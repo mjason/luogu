@@ -85,6 +85,16 @@ module Luogu
       end
     end
 
+    def playload(messages)
+      messages.each do |message|
+        puts "test: #{message}"
+        self.puts self.chat(message)
+      end
+      now = Time.now.to_i
+      self.class.save @row_history, "./prompt.row_history.test-#{now}.md"
+      self.class.save @history.to_a, "./prompt.history.test-#{now}.md"
+    end
+
     class << self
       def save(history, file_path)
         text = ""
