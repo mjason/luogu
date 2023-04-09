@@ -10,11 +10,6 @@ module Luogu
 
     def render
       process_file
-      if @messages.length.even?
-        @messages
-      else
-        raise "prompt里面的问答对不对, 必须是一问一答, 当前存在单一问题或者答案"
-      end
     end
 
     def to_json
