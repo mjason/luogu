@@ -10,6 +10,7 @@ module Luogu
 
     def render
       process_file
+      @messages
     end
 
     def to_json
