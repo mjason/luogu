@@ -5,6 +5,7 @@ require 'json'
 require 'yaml'
 require "dry/cli"
 require 'fileutils'
+require 'ostruct'
 
 require_relative 'plugin'
 require_relative 'history_queue'

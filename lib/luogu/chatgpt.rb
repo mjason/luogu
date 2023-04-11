@@ -23,7 +23,9 @@ module Luogu
       @row_history = []
       @history = HistoryQueue.new @limit_history
 
-      @plugin.setup_proc.call(self) if @plugin.setup_proc
+      if @plugin.setup_proc
+        @plugin.setup_proc.call(self, OpenStruct.new) 
+      end
     end
 
     def request(messages)
@@ -33,17 +35,23 @@ module Luogu
         temperature: @temperature,
       }
       
-      params = @plugin.before_request_proc.call(self, params) if @plugin.before_request_proc
+      if @plugin.before_request_proc
+        params = @plugin.before_request_proc.call(self, OpenStruct.new(request_params: params)).request_params
+      end
       response = client.chat(parameters: params)
-      @plugin.after_request_proc.call(self, response) if @plugin.after_request_proc
+      @plugin.after_request_proc.call(self, OpenStruct.new(response: response)) if @plugin.after_request_proc
 
       response.dig("choices", 0, "message", "content")
     end
 
     def chat(user_message)
-      user_message = @plugin.before_input_proc.call(self, user_message) if @plugin.before_input_proc
+      if @plugin.before_input_proc
+        user_message = @plugin.before_input_proc.call(self, OpenStruct.new(user_input: user_message)).user_input
+      end
       messages = (@prompt.render + @history.to_a) << {role: "user", content: user_message}
-      @plugin.after_input_proc.call(self, messages) if @plugin.after_input_proc
+      if @plugin.after_input_proc
+        messages = @plugin.after_input_proc.call(self, OpenStruct.new(request_messages: messages)).request_messages
+      end
 
       assistant_message = self.request(messages)
       
@@ -53,7 +61,7 @@ module Luogu
         puts "执行文档中的callback"
         instance_eval @prompt.ruby_code, @prompt.file_path, @prompt.ruby_code_line
       elsif @plugin.before_save_history_proc
-        @plugin.before_save_history_proc.call(self, user_message, assistant_message)
+        @plugin.before_save_history_proc.call(self, OpenStruct.new(user_input: user_message, response_message: assistant_message))
       else
         puts "执行默认的历史记录"
         self.push_history(user_message, assistant_message)
@@ -70,7 +78,9 @@ module Luogu
     def push_history(user_message, assistant_message)
       @history.enqueue({role: "user", content: user_message})
       @history.enqueue({role: "assistant", content: assistant_message})
-      @plugin.after_save_history_proc.call(self, user_message, assistant_message) if @plugin.after_save_history_proc
+      if @plugin.after_save_history_proc
+        @plugin.after_save_history_proc.call(self, OpenStruct.new(user_input: user_message, response_message: assistant_message)) 
+      end
     end
 
     def ask(message)
