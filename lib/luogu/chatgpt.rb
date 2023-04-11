@@ -1,8 +1,20 @@
 module Luogu
   class ChatGPT
-    def initialize(file, history_path='.')
+
+    attr_accessor :template, :limit_history, :prompt, :row_history, :history, :temperature, :model_name
+
+    def initialize(file, history_path='.', plugin_file_path=nil)
+      @plugin_file_path = plugin_file_path || file.sub(File.extname(file), ".plugin.rb")
+
+      if File.exist?(@plugin_file_path)
+        @plugin = Plugin.new(@plugin_file_path).load()
+      else
+        @plugin = Plugin.new(@plugin_file_path)
+      end
+
       @temperature = ENV.fetch('OPENAI_TEMPERATURE', '0.7').to_f
       @limit_history = ENV.fetch('OPENAI_LIMIT_HISTORY', '6').to_i * 2
+      @model_name = "gpt-3.5-turbo"
       
       @history_path = history_path
       @prompt_file = file
@@ -10,20 +22,29 @@ module Luogu
       @prompt = PromptParser.new(file)
       @row_history = []
       @history = HistoryQueue.new @limit_history
+
+      @plugin.setup_proc.call(self) if @plugin.setup_proc
     end
 
     def request(messages)
-      response = client.chat(
-        parameters: {
-            model: "gpt-3.5-turbo",
-            messages: messages,
-            temperature: 0.7,
-        })
+      params = {
+        model: @model_name,
+        messages: messages,
+        temperature: @temperature,
+      }
+      
+      params = @plugin.before_request_proc.call(self, params) if @plugin.before_request_proc
+      response = client.chat(parameters: params)
+      @plugin.after_request_proc.call(self, response) if @plugin.after_request_proc
+
       response.dig("choices", 0, "message", "content")
     end
 
     def chat(user_message)
+      user_message = @plugin.before_input_proc.call(self, user_message) if @plugin.before_input_proc
       messages = (@prompt.render + @history.to_a) << {role: "user", content: user_message}
+      @plugin.after_input_proc.call(self, messages) if @plugin.after_input_proc
+
       assistant_message = self.request(messages)
       
       self.push_row_history(user_message, assistant_message)
@@ -31,6 +52,8 @@ module Luogu
       if @prompt.ruby_code
         puts "执行文档中的callback"
         instance_eval @prompt.ruby_code, @prompt.file_path, @prompt.ruby_code_line
+      elsif @plugin.before_save_history_proc
+        @plugin.before_save_history_proc.call(self, user_message, assistant_message)
       else
         puts "执行默认的历史记录"
         self.push_history(user_message, assistant_message)
@@ -47,6 +70,7 @@ module Luogu
     def push_history(user_message, assistant_message)
       @history.enqueue({role: "user", content: user_message})
       @history.enqueue({role: "assistant", content: assistant_message})
+      @plugin.after_save_history_proc.call(self, user_message, assistant_message) if @plugin.after_save_history_proc
     end
 
     def ask(message)

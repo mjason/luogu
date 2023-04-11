@@ -32,9 +32,10 @@ module Luogu
         desc "编译 Prompt.md 成能够提交给 ChatGPT API 的 messages. 默认输出为 <同文件名>.json"
         argument :prompt_file, type: :string, required: true, desc: "Prompt文件, 使用markdown书写"
         option :out, type: :string, default: ".", desc: "保存历史时存放的目录，默认为当前目录"
+        option :plugin, type: :string, desc: "运行的时候载入对应的插件"
 
         def call(prompt_file: nil, **options)
-          chatgpt = ChatGPT.new(prompt_file, options.fetch(:out))
+          chatgpt = ChatGPT.new(prompt_file, options.fetch(:out), options.fetch(:plugin, nil))
           chatgpt.run
         end
 
@@ -61,11 +62,12 @@ module Luogu
         argument :prompt_file, type: :string, require: true, desc: "输出 Prompt 文件"
         argument :test_file, type: :string, require: false, desc: "测试文件, 使用 YAML 文件, 一个字符串数组。默认为 同名.test.yml"
         option :out, type: :string, default: ".", desc: "保存测试历史时存放的目录，默认为当前目录"
+        option :plugin, type: :string, desc: "运行的时候载入对应的插件"
 
         def call(prompt_file: nil, test_file:nil, **options)
           test_file ||= prompt_file.sub(File.extname(prompt_file), ".test.yml")
 
-          chatgpt = ChatGPT.new(prompt_file, options.fetch(:out))
+          chatgpt = ChatGPT.new(prompt_file, options.fetch(:out), options.fetch(:plugin, nil))
           messages = YAML.load_file(test_file)
           chatgpt.playload messages
         end

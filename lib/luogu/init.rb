@@ -6,6 +6,7 @@ require 'yaml'
 require "dry/cli"
 require 'fileutils'
 
+require_relative 'plugin'
 require_relative 'history_queue'
 require_relative "prompt_parser"
 require_relative "chatgpt"

@@ -12,3 +12,4 @@ _prompt.json
 prompt.md
 prompt.test.yml
 /out
+prompt.plugin.rb
