@@ -62,9 +62,10 @@ end
 - exit 退出
 
 ## 插件模式
-OpenStruct.new(request_params: params)
-OpenStruct.new(user_input: user_message)
-OpenStruct.new(request_messages: messages)
-OpenStruct.new(user_input: user_message, response_message: assistant_message)
+- OpenStruct.new(request_params: params)
+- OpenStruct.new(user_input: user_message)
+- OpenStruct.new(request_messages: messages)
+- OpenStruct.new(user_input: user_message, response_message: assistant_message)
+- OpenStruct.new(response: response)
 
 ## MIT 协议

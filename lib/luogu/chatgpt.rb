@@ -1,7 +1,7 @@
 module Luogu
   class ChatGPT
 
-    attr_accessor :template, :limit_history, :prompt, :row_history, :history, :temperature, :model_name
+    attr_accessor :template, :limit_history, :prompt, :row_history, :history, :temperature, :model_name, :context
 
     def initialize(file, history_path='.', plugin_file_path=nil)
       @plugin_file_path = plugin_file_path || file.sub(File.extname(file), ".plugin.rb")
@@ -23,6 +23,8 @@ module Luogu
       @row_history = []
       @history = HistoryQueue.new @limit_history
 
+      @context = OpenStruct.new
+
       if @plugin.setup_proc
         @plugin.setup_proc.call(self, OpenStruct.new) 
       end
@@ -36,21 +38,25 @@ module Luogu
       }
       
       if @plugin.before_request_proc
-        params = @plugin.before_request_proc.call(self, OpenStruct.new(request_params: params)).request_params
+        @context.request_params = params
+        params = @plugin.before_request_proc.call(self, @context).request_params
       end
       response = client.chat(parameters: params)
-      @plugin.after_request_proc.call(self, OpenStruct.new(response: response)) if @plugin.after_request_proc
+      @context.response = response
+      @plugin.after_request_proc.call(self, @context) if @plugin.after_request_proc
 
       response.dig("choices", 0, "message", "content")
     end
 
     def chat(user_message)
       if @plugin.before_input_proc
-        user_message = @plugin.before_input_proc.call(self, OpenStruct.new(user_input: user_message)).user_input
+        @context.user_input = user_message
+        user_message = @plugin.before_input_proc.call(self, @context).user_input
       end
       messages = (@prompt.render + @history.to_a) << {role: "user", content: user_message}
       if @plugin.after_input_proc
-        messages = @plugin.after_input_proc.call(self, OpenStruct.new(request_messages: messages)).request_messages
+        @context.request_messages = messages
+        messages = @plugin.after_input_proc.call(self, @context).request_messages
       end
 
       assistant_message = self.request(messages)
@@ -61,7 +67,9 @@ module Luogu
         puts "执行文档中的callback"
         instance_eval @prompt.ruby_code, @prompt.file_path, @prompt.ruby_code_line
       elsif @plugin.before_save_history_proc
-        @plugin.before_save_history_proc.call(self, OpenStruct.new(user_input: user_message, response_message: assistant_message))
+        @context.user_input = user_message
+        @context.response_message = assistant_message
+        @plugin.before_save_history_proc.call(self, @context)
       else
         puts "执行默认的历史记录"
         self.push_history(user_message, assistant_message)
@@ -79,7 +87,9 @@ module Luogu
       @history.enqueue({role: "user", content: user_message})
       @history.enqueue({role: "assistant", content: assistant_message})
       if @plugin.after_save_history_proc
-        @plugin.after_save_history_proc.call(self, OpenStruct.new(user_input: user_message, response_message: assistant_message)) 
+        @context.user_input = user_message
+        @context.response_message = response_message
+        @plugin.after_save_history_proc.call(self, @context) 
       end
     end
 
