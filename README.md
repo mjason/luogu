@@ -62,10 +62,69 @@ end
 - exit 退出
 
 ## 插件模式
-- OpenStruct.new(request_params: params)
-- OpenStruct.new(user_input: user_message)
-- OpenStruct.new(request_messages: messages)
-- OpenStruct.new(user_input: user_message, response_message: assistant_message)
-- OpenStruct.new(response: response)
+在 run 和 test 中可以使用，可以使用 --plugin=<file>.plugin.rb
+默认情况下你可以使用 <文件名>.plugin.rb 来实现一个prompt.md的插件
+在插件中有两个对象
+
+```ruby
+#gpt
+gpt.row_history # 访问裸的历史记录 可读写
+gpt.history # 处理过的历史记录 可读写
+gpt.temperature # 设置请求的 temperature
+gpt.model_name # 获取模型名称
+
+#context
+OpenStruct.new(
+  request_params: params, # 请求参数
+  user_input: user_message, # 用户输入
+  request_messages: messages, #请求时的messages
+  response_message: assistant_message, # 回复的message
+  response: response # 回复的response
+)
+# 如果需要在方法中使用使用变量传递，必须使用context包括你要的变量名，比如 context.name = "luogu"
+```
+
+支持的回调
+```ruby
+# 所有方法都必须返回context
+# 可以使用
+# require 'irb'
+# binding.irb
+# 来调试断点
+
+setup do |gpt, context|
+  puts gpt
+  context
+end
+
+before_input do |gpt, context|
+  puts "用户输入了: #{context.user_input}"
+  context
+end
+
+after_input do |gpt, context|
+  context
+end
+
+before_request do |gpt, context|
+  puts "request params: "
+  puts context
+  context
+end
+
+after_request do |gpt, context|
+  context
+end
+
+before_save_history do |gpt, context|
+  context
+end
+
+after_save_historydo |gpt, context|
+  context
+end
+
+
+```
 
 ## MIT 协议

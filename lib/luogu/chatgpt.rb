@@ -1,7 +1,7 @@
 module Luogu
   class ChatGPT
 
-    attr_accessor :template, :limit_history, :prompt, :row_history, :history, :temperature, :model_name, :context
+    attr_accessor :limit_history, :prompt, :row_history, :history, :temperature, :model_name, :context
 
     def initialize(file, history_path='.', plugin_file_path=nil)
       @plugin_file_path = plugin_file_path || file.sub(File.extname(file), ".plugin.rb")
