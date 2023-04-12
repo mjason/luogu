@@ -6,6 +6,7 @@ require 'yaml'
 require "dry/cli"
 require 'fileutils'
 require 'ostruct'
+require 'benchmark'
 
 require_relative 'plugin'
 require_relative 'history_queue'

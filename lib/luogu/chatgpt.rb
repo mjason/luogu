@@ -128,15 +128,21 @@ module Luogu
           puts "再见！"
           break
         else
-          self.puts self.chat(input)
+          time = Benchmark.measure do
+            self.puts self.chat(input)
+          end
+          puts "input: #{input} 执行时间为 #{time.real} 秒"
         end
       end
     end
 
     def playload(messages)
       messages.each do |message|
-        puts "test: #{message}"
-        self.puts self.chat(message)
+        time = Benchmark.measure do
+          puts "test: #{message}"
+          self.puts self.chat(message)
+        end
+        puts "test: #{message} 执行时间为 #{time.real} 秒"
       end
       now = Time.now.to_i
       file_name = File.basename(@prompt_file, ".*")
