@@ -9,7 +9,7 @@ module Luogu
     end
 
     def render
-      process_file
+      process_file if @messages.size == 0
       @messages
     end
 
@@ -18,7 +18,7 @@ module Luogu
     end
 
     def process_file
-      @messages = []
+      @messages = [] 
       file = File.read(@file_path)
 
       if file =~ /@callback/
