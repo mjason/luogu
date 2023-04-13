@@ -1,6 +1,6 @@
 module Luogu
   class PromptParser
-    attr_reader :ruby_code, :ruby_code_line, :file_path
+    attr_reader :ruby_code, :ruby_code_line, :file_path, :messages
     def initialize(file_path)
       @file_path = file_path
       @messages = []
@@ -17,7 +17,6 @@ module Luogu
       JSON.pretty_generate self.render
     end
 
-    private
     def process_file
       @messages = []
       file = File.read(@file_path)
