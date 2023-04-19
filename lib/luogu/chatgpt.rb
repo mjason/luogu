@@ -44,8 +44,7 @@ module Luogu
       response = client.chat(parameters: params)
       @context.response = response
       @plugin.after_request_proc.call(self, @context) if @plugin.after_request_proc
-
-      response.dig("choices", 0, "message", "content")
+      response.parse.dig("choices", 0, "message", "content")
     end
 
     def chat(user_message)

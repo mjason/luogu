@@ -1,4 +1,4 @@
-require "openai"
+require "http"
 require 'dotenv/load'
 require "tty-prompt"
 require 'json'
@@ -8,6 +8,7 @@ require 'fileutils'
 require 'ostruct'
 require 'benchmark'
 
+require_relative 'openai'
 require_relative 'plugin'
 require_relative 'history_queue'
 require_relative "prompt_parser"
@@ -15,7 +16,7 @@ require_relative "chatgpt"
 require_relative "cli"
 
 def client
-  $client ||= OpenAI::Client.new
+  $client ||= Luogu::OpenAI::Client.new
 end
 
 class String
