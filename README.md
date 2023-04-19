@@ -4,7 +4,7 @@
 用来开发 prompt 工程的工具
 
 ### 更新记录
-- 0.1.14 讲http库替换成HTTP.rb并且加入了重试机制，默认为3次，可通过设置环境变量 OPENAI_REQUEST_RETRIES 来设置次数
+- 0.1.15 讲http库替换成HTTP.rb并且加入了重试机制，默认为3次，可通过设置环境变量 OPENAI_REQUEST_RETRIES 来设置次数
 
 ### 安装
 - 安装ruby，要求2.6以上，Mac自带不需要再安装
