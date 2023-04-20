@@ -26,7 +26,7 @@ module Luogu
       @context = OpenStruct.new
 
       if @plugin.setup_proc
-        @plugin.setup_proc.call(self, OpenStruct.new) 
+        @plugin.setup_proc.call(self, @context) 
       end
     end
 

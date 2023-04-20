@@ -1,0 +1,35 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "bundler/setup"
+require "luogu"
+
+class WeatherAgent < Luogu::Agent
+  desc "查询天气。输入必须是一个JSON数据{\"location\": \"地点\", \"date\": \"时间\"}。"
+
+  def call(input)
+    "广州明天的天气不错,晴空万里"
+  end
+end
+
+class CalculatorAgent < Luogu::Agent
+  desc "数学运算. 输入必须是一个JSON{\"code\": \"可执行的ruby表达式\"}"
+
+  def call(input)
+    sum = eval JSON.parse(input)['code']
+    "JSON.parse(input)['code'] 的结果是: #{sum}"
+  end
+end
+
+runner = Luogu::AgentRunner.new
+runner
+  .register(WeatherAgent)
+  .register(CalculatorAgent)
+
+# puts runner.user_input_template
+runner.chat "查询广州明天的天气的同时用计算工具计算一下3加2除23加3"
+# runner.chat "用计算工具计算一下3的阶乘"
+runner.chat "罗纳尔多是谁"
+
+# require "irb"
+# binding.irb
