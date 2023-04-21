@@ -6,7 +6,7 @@ module Luogu::OpenAI
 
     def initialize(*args)
       defaults = { model: "gpt-3.5-turbo", messages: []}
-      super(**defaults.merge(args.first || {}))
+      super(*defaults.merge(args.first || {}).values_at(*self.class.members))
     end
 
     def to_h
