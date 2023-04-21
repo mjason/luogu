@@ -1,7 +1,7 @@
 module Luogu
   class AgentRunner
     attr_accessor :system_prompt_template, :user_input_prompt_template
-    attr_reader :session
+    attr_reader :session, :histories
 
     def initialize(system_prompt_template: nil, user_input_prompt_template: nil, tools_response_prompt_template: nil, session: Session.new)
       @system_prompt_template = system_prompt_template || load_system_prompt_default_template
