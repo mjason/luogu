@@ -1,6 +1,3 @@
-#!/usr/bin/env ruby
-# frozen_string_literal: true
-
 require "bundler/setup"
 require "luogu"
 
@@ -27,9 +24,10 @@ runner
   .register(CalculatorAgent)
 
 # puts runner.user_input_template
-runner.chat "查询广州明天的天气的同时用计算工具计算一下3加2除23加3"
+# runner.chat "查询广州明天的天气的同时用计算工具计算一下3加2除23加3"
 # runner.chat "用计算工具计算一下3的阶乘"
-runner.chat "罗纳尔多是谁"
-
+# runner.chat "罗纳尔多是谁"
+runner.chat "明天广州的天气怎么样"
+runner.chat "那明天适合穿什么样的衣服"
 # require "irb"
 # binding.irb

@@ -14,7 +14,7 @@ module Luogu
       @chatgpt_request_body = Luogu::OpenAI::ChatRequestBody.new(temperature: 0)
       @chatgpt_request_body.stop = ["\nObservation:", "\n\tObservation:"]
       @limit_history = ENV.fetch('OPENAI_LIMIT_HISTORY', '6').to_i * 2
-      @history = HistoryQueue.new @limit_history
+      @histories = HistoryQueue.new @limit_history
 
       @last_user_input = ''
       @tools_response = []
@@ -53,15 +53,6 @@ module Luogu
       @tools_response_prompt_template.result binding
     end
 
-    def chat(message)
-      @last_user_input = message
-      messages = [
-        {role: "system", content: self.system_prompt_template},
-        {role: "user", content: self.user_input_prompt_template},
-      ]
-      self.request_chat(messages)
-    end
-
     def find_final_answer(content)
       if content.is_a?(Hash) && content['action'] == 'Final Answer'
         content['action_input']
@@ -75,6 +66,20 @@ module Luogu
       else
         nil
       end
+    end
+
+    def find_and_save_final_answer(content)
+      if answer = self.find_final_answer(content)
+        self.save_history(answer)
+        answer
+      else
+        nil
+      end
+    end
+
+    def save_history(finnal_answer)
+      @histories.enqueue({role: "user", content: @last_user_input})
+      @histories.enqueue({role: "assistant", content: finnal_answer})
     end
 
     def parse_json(markdown)
@@ -93,20 +98,30 @@ module Luogu
       end
     end
 
+    def create_messages(messages)
+      [{role: "system", content: self.system_prompt_template}] + @histories.to_a + messages
+    end
+
     def request_chat(messages)
       logger.debug "request chat: #{messages}"
       response = request messages
       content = self.parse_json response.dig("choices", 0, "message", "content")
       logger.debug content
-      if answer = self.find_final_answer(content)
+      if answer = self.find_and_save_final_answer(content)
         logger.info "finnal answer: #{answer}"
       elsif content.is_a?(Array)
         self.run_agents(content)
       end
     end
 
+    def chat(message)
+      @last_user_input = message
+      messages = self.create_messages([{role: "user", content: self.user_input_prompt_template}])
+      self.request_chat(messages)
+    end
+
     def run_agents(agents)
-      if answer = self.find_final_answer(agents)
+      if answer = self.find_and_save_final_answer(agents)
         logger.info "finnal answer: #{answer}"
         return
       end
@@ -117,12 +132,11 @@ module Luogu
         response = agent_class.new.call(agent['action_input'])
         @tools_response << {name: agent['action'], response: response}
       end
-      messages = [
-        {role: "system", content: self.system_prompt_template},
+      messages = self.create_messages([
         {role: "user", content: self.user_input_prompt_template},
         {role: "assistant", content: agents.to_json},
         {role: "user", content: self.tools_response_prompt_template},
-      ]
+      ])
       self.request_chat messages
     end
 

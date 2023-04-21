@@ -74,11 +74,21 @@ module Luogu
 
       end
 
+      class Agent < Dry::CLI::Command
+        desc "运行 Agent 文件"
+        argument :agent_file, type: :string, require: true, desc: "运行 agent 文件"
+
+        def call(agent_file: nil, **)
+          exec "ruby #{agent_file}"
+        end
+      end
+
       register "version", Version, aliases: ["v", "-v", "--version"]
       register "build", Build, aliases: ["b"]
       register "run", Run, aliases: ["r"]
       register "generate", Generate, aliases: ["g"]
       register "test", Test, aliases: ["t"]
+      register "agent", Agent, aliases: ["a"]
 
     end
   end
