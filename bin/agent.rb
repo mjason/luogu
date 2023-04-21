@@ -5,7 +5,12 @@ class WeatherAgent < Luogu::Agent
   desc "查询天气。输入必须是一个JSON数据{\"location\": \"地点\", \"date\": \"时间\"}。"
 
   def call(input)
-    "广州明天的天气不错,晴空万里"
+    data = JSON.parse(input)
+    unless data["date"].is_a? Integer
+      "你输入的时间有错误，时间需要用unix时间表达，当前时间为: #{Time.now.to_i}"
+    else
+      "广州市明天小雨转雷阵雨,23到26度,空气质量优"
+    end
   end
 end
 
@@ -29,5 +34,6 @@ runner
 # runner.chat "罗纳尔多是谁"
 runner.chat "明天广州的天气怎么样"
 runner.chat "那明天适合穿什么样的衣服"
+# puts runner.histories.to_a
 # require "irb"
 # binding.irb

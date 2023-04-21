@@ -110,7 +110,7 @@ module Luogu
       if answer = self.find_and_save_final_answer(content)
         logger.info "finnal answer: #{answer}"
       elsif content.is_a?(Array)
-        self.run_agents(content)
+        self.run_agents(content, messages)
       end
     end
 
@@ -120,7 +120,7 @@ module Luogu
       self.request_chat(messages)
     end
 
-    def run_agents(agents)
+    def run_agents(agents, _messages_)
       if answer = self.find_and_save_final_answer(agents)
         logger.info "finnal answer: #{answer}"
         return
@@ -132,11 +132,7 @@ module Luogu
         response = agent_class.new.call(agent['action_input'])
         @tools_response << {name: agent['action'], response: response}
       end
-      messages = self.create_messages([
-        {role: "user", content: self.user_input_prompt_template},
-        {role: "assistant", content: agents.to_json},
-        {role: "user", content: self.tools_response_prompt_template},
-      ])
+      messages = _messages_ + [{role: "assistant", content: agents.to_json}, {role: "user", content: self.tools_response_prompt_template}]
       self.request_chat messages
     end
 
