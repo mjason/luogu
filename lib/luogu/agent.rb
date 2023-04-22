@@ -7,7 +7,7 @@ module Luogu
 
     class << self
       def desc(content)
-        @_desc_ = content
+        @_desc_ = content.gsub(/\n/, "")
       end
 
       def input_desc(content)
