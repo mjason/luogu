@@ -35,7 +35,7 @@ module Luogu
         option :plugin, type: :string, desc: "运行的时候载入对应的插件"
 
         def call(prompt_file: nil, **options)
-          chatgpt = ChatGPT.new(prompt_file, options.fetch(:out), options.fetch(:plugin, nil))
+          chatgpt = ChatLLM.new(prompt_file, options.fetch(:out), options.fetch(:plugin, nil))
           chatgpt.run
         end
 
@@ -51,7 +51,7 @@ module Luogu
           json = JSON.parse(File.read(json_file), symbolize_names: true)
           prompt_file ||=  json_file.sub(File.extname(json_file), ".md")
 
-          chatgpt = ChatGPT.save(json, prompt_file)
+          chatgpt = ChatLLM.save(json, prompt_file)
         end
 
       end
@@ -67,7 +67,7 @@ module Luogu
         def call(prompt_file: nil, test_file:nil, **options)
           test_file ||= prompt_file.sub(File.extname(prompt_file), ".test.yml")
 
-          chatgpt = ChatGPT.new(prompt_file, options.fetch(:out), options.fetch(:plugin, nil))
+          chatgpt = ChatLLM.new(prompt_file, options.fetch(:out), options.fetch(:plugin, nil))
           messages = YAML.load_file(test_file)
           chatgpt.playload messages
         end
@@ -83,7 +83,7 @@ module Luogu
         end
       end
 
-      register "version", Version, aliases: ["v", "-v", "--version"]
+      register "version", Version, aliases: %w[v -v --version]
       register "build", Build, aliases: ["b"]
       register "run", Run, aliases: ["r"]
       register "generate", Generate, aliases: ["g"]

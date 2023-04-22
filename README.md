@@ -1,19 +1,20 @@
 # Luogu
-> 锣鼓，现在的写代码就如古代的求神仪式一样，以前敲锣打鼓求天，现在敲锣打鼓求大模型
 
-用来开发 prompt 工程的工具
+> 锣鼓，现在的写代码就如古代的求神仪式一样，以前敲锣打鼓求天，现在敲锣打鼓求大模型，PS.本文档也是通过GPT来做优化的，具体查看`prompt.md`和`prompt.plugin.rb`
 
-### 更新记录
-- 0.1.15 http库替换成HTTP.rb并且加入了重试机制，默认为3次，可通过设置环境变量 OPENAI_REQUEST_RETRIES 来设置次数
-- 0.1.16 增加对agent的支持
+Luogu是一个针对产品经理的Prompt设计工具，可以帮助你更方便地编写和测试Prompt。
 
-### 安装
-- 安装ruby，要求2.6以上，Mac自带不需要再安装
-- gem install luogu
-- 如果使用 mac 可能你需要使用sudu权限
-- 如果需要在终端显示markdown，需要 [glow](https://github.com/charmbracelet/glow)
+## 安装
 
-### 使用
+1. 安装Ruby，要求2.6以上，Mac自带不需要再安装
+2. 在终端中运行`gem install luogu`命令安装Luogu
+3. 如果使用Mac可能需要使用sudo权限
+4. 如果需要在终端显示markdown，需要安装[glow](https://github.com/charmbracelet/glow)
+
+## 使用
+
+Luogu提供了以下命令：
+
 ```Bash
 Commands:
   luogu build PROMPT_FILE [TARGET_FILE]                      # 编译 Prompt.md 成能够提交给 ChatGPT API 的 messages. 默认输出为 <同文件名>.json
@@ -23,52 +24,28 @@ Commands:
   luogu version                                              # 打印版本
 ```
 
-你可以在项目目录的.env中设置下面的环境变量，或者直接系统设置
+你可以在项目目录的.env中设置下面的环境变量，或者直接系统设置：
+
 ```
 OPENAI_ACCESS_TOKEN=zheshiyigetoken
 OPENAI_TEMPERATURE=0.7
 OPENAI_LIMIT_HISTORY=6
 ```
 
-prompt.md 示例
-```
-@s
-你是一个罗纳尔多的球迷
+## 进入run模式
 
-@a
-好的
+在run模式下，你可以使用以下命令：
 
-@u
-罗纳尔多是谁？
-
-@a
-是大罗，不是C罗
-```
-
-如果需要处理历史记录的是否进入上下文可以使用，在 prompt.md写入
-
-
-@callback
-```ruby
-if assistant_message =~ /```ruby/
-  puts "记录本次记录"
-  self.push_history(user_message, assistant_message)
-else
-  puts "抛弃本次记录"
-end
-```
-
-
-### 进入run模式
-- save 保存对话
-- row history  查看对话历史
-- history 查看当前上下文
-- exit 退出
+- save：保存对话
+- row history：查看对话历史
+- history：查看当前上下文
+- exit：退出
 
 ## 插件模式
-在 run 和 test 中可以使用，可以使用 --plugin=<file>.plugin.rb
-默认情况下你可以使用 <文件名>.plugin.rb 来实现一个prompt.md的插件
-在插件中有两个对象
+
+在run和test中可以使用插件模式，可以使用--plugin=<file>.plugin.rb。默认情况下，你可以使用<文件名>.plugin.rb来实现一个prompt.md的插件。
+
+在插件中有两个对象：
 
 ```ruby
 #gpt
@@ -88,7 +65,8 @@ OpenStruct.new(
 # 如果需要在方法中使用使用变量传递，必须使用context包括你要的变量名，比如 context.name = "luogu"
 ```
 
-支持的回调
+支持的回调：
+
 ```ruby
 # 所有方法都必须返回context
 # 可以使用
@@ -127,8 +105,44 @@ end
 after_save_historydo |gpt, context|
   context
 end
-
-
 ```
 
-## MIT 协议
+## 示例
+
+下面是一个prompt.md的示例：
+
+```
+@s
+你是一个罗纳尔多的球迷
+
+@a
+好的
+
+@u
+罗纳尔多是谁？
+
+@a
+是大罗，不是C罗
+```
+
+如果需要处理历史记录的是否进入上下文可以使用，在prompt.md写入：
+
+@callback
+```ruby
+if assistant_message =~ /```ruby/
+  puts "记录本次记录"
+  self.push_history(user_message, assistant_message)
+else
+  puts "抛弃本次记录"
+end
+```
+
+## 更新记录
+
+- 0.1.15：http库替换成HTTP.rb并且加入了重试机制，默认为3次，可通过设置环境变量OPENAI_REQUEST_RETRIES来设置次数
+- 0.1.16：增加对agent的支持
+- 0.2.0：重构了代码，agent的支持基本达到可用状态，具体看`bin/agent.rb`示例，有破坏性更新，不兼容0.1.x的agent写法
+
+## License
+
+This project is licensed under the terms of the MIT license. See the [LICENSE](LICENSE) file for details.

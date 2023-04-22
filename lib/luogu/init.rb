@@ -3,40 +3,31 @@ require 'dotenv/load'
 require "tty-prompt"
 require 'json'
 require 'yaml'
-require "dry/cli"
 require 'fileutils'
 require 'ostruct'
 require 'benchmark'
 require 'erb'
 require 'logger'
 
+require "dry/cli"
+require 'dry-configurable'
+
+require_relative 'base'
+require_relative 'error'
+require_relative 'application'
+
 require_relative "prompt_template"
-require_relative 'openai'
 require_relative 'plugin'
 require_relative 'history_queue'
 require_relative "prompt_parser"
-require_relative "chatgpt"
+require_relative "chatllm"
 require_relative "cli"
 
 require_relative "agent"
-require_relative "session"
 require_relative "agent_runner"
 
-
-
-def client
-  $client ||= Luogu::OpenAI::Client.new
-end
-
-def logger_init
-  logger = Logger.new(STDOUT)
-  logger.level = ENV['LOG_LEVEL'] ? Logger.const_get(ENV['LOG_LEVEL']) : Logger::INFO
-  logger
-end
-
-def logger
-  $logger ||= logger_init
-end
+require_relative 'openai'
+require_relative 'terminal'
 
 class String
   def cover_chinese

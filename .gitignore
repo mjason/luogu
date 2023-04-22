@@ -9,7 +9,6 @@
 .env
 prompt.json
 _prompt.json
-prompt.md
 prompt.test.yml
 /out
-prompt.plugin.rb
+/.idea/

@@ -1,64 +1,76 @@
 module Luogu
-  class ChatGPT
+  class ChatLLM < Base
 
-    attr_accessor :limit_history, :prompt, :row_history, :history, :temperature, :model_name, :context
+    setting :provider do
+      setting :parameter_model, default: ->() {
+        OpenAI::ChatRequestParams.new(
+          model: 'gpt-3.5-turbo',
+          temperature: Application.config.openai.temperature
+        )
+      }
+      setting :request, default: ->(params) { OpenAI.chat(params: params) }
+      setting :parse, default: ->(response) { OpenAI.get_content(response) }
+      setting :find_final_answer, default: ->(content) { OpenAI.find_final_answer(content) }
+      setting :history_limit, default: Application.config.openai.history_limit
+    end
+
+    attr_accessor :context
+    attr_reader :plugin
 
     def initialize(file, history_path='.', plugin_file_path=nil)
       @plugin_file_path = plugin_file_path || file.sub(File.extname(file), ".plugin.rb")
-
       if File.exist?(@plugin_file_path)
         @plugin = Plugin.new(@plugin_file_path).load()
       else
         @plugin = Plugin.new(@plugin_file_path)
       end
-
-      @temperature = ENV.fetch('OPENAI_TEMPERATURE', '0.7').to_f
-      @limit_history = ENV.fetch('OPENAI_LIMIT_HISTORY', '6').to_i * 2
-      @model_name = "gpt-3.5-turbo"
-      
       @history_path = history_path
       @prompt_file = file
-
       @prompt = PromptParser.new(file)
       @row_history = []
-      @history = HistoryQueue.new @limit_history
+      @histories = HistoryQueue.new provider.history_limit
+
+      @request_params = provider.parameter_model.call
 
       @context = OpenStruct.new
 
-      if @plugin.setup_proc
-        @plugin.setup_proc.call(self, @context) 
-      end
+      run_plugin :setup
+    end
+
+    def run_plugin(method_name, &block)
+      plugin.run method_name: method_name, llm: self, context: @context, &block
+    end
+
+    def provider
+      config.provider
     end
 
     def request(messages)
-      params = {
-        model: @model_name,
-        messages: messages,
-        temperature: @temperature,
-      }
-      
-      if @plugin.before_request_proc
-        @context.request_params = params
-        params = @plugin.before_request_proc.call(self, @context).request_params
+      @request_params.messages = messages
+      @context.request_params = @request_params
+      run_plugin :before_request
+      response = provider.request.call(@request_params.to_h)
+      unless response.code == 200
+        logger.error response.body.to_s
+        raise RequestError
       end
-      response = client.chat(parameters: params).parse
       @context.response = response
-      @plugin.after_request_proc.call(self, @context) if @plugin.after_request_proc
-      response.dig("choices", 0, "message", "content")
+      run_plugin :after_request
+
+      provider.parse.call(response)
     end
 
     def chat(user_message)
-      if @plugin.before_input_proc
-        @context.user_input = user_message
-        user_message = @plugin.before_input_proc.call(self, @context).user_input
-      end
-      messages = (@prompt.render + @history.to_a) << {role: "user", content: user_message}
-      if @plugin.after_input_proc
-        @context.request_messages = messages
-        messages = @plugin.after_input_proc.call(self, @context).request_messages
+      @context.user_input = user_message
+      run_plugin :before_input do |context|
+        user_message = context.user_input
       end
 
-      assistant_message = self.request(messages)
+      messages = (@prompt.render + @histories.to_a) << { role: "user", content: user_message}
+      run_plugin :after_input do
+        messages = @context.request_messages
+      end
+      assistant_message = request(messages)
       
       self.push_row_history(user_message, assistant_message)
 
@@ -68,11 +80,14 @@ module Luogu
       elsif @plugin.before_save_history_proc
         @context.user_input = user_message
         @context.response_message = assistant_message
-        @plugin.before_save_history_proc.call(self, @context)
+
+        run_plugin :before_save_history
       else
         puts "执行默认的历史记录"
         self.push_history(user_message, assistant_message)
       end
+
+      run_plugin :after_save_history
 
       assistant_message
     end
@@ -83,8 +98,8 @@ module Luogu
     end
 
     def push_history(user_message, assistant_message)
-      @history.enqueue({role: "user", content: user_message})
-      @history.enqueue({role: "assistant", content: assistant_message})
+      @histories.enqueue({ role: "user", content: user_message})
+      @histories.enqueue({ role: "assistant", content: assistant_message})
       if @plugin.after_save_history_proc
         @context.user_input = user_message
         @context.response_message = response_message
@@ -118,11 +133,11 @@ module Luogu
         when "save"
           file_name = File.basename(@prompt_file, ".*")
           self.class.save @row_history, File.join(@history_path, "#{file_name}.row_history.md")
-          self.class.save @history.to_a, File.join(@history_path, "#{file_name}.history.md")
+          self.class.save @histories.to_a, File.join(@history_path, "#{file_name}.history.md")
         when "row history"
           p @row_history
         when "history"
-          p @history.to_a
+          p @histories.to_a
         when "exit"
           puts "再见！"
           break
@@ -147,7 +162,7 @@ module Luogu
       file_name = File.basename(@prompt_file, ".*")
 
       self.class.save @row_history, File.join(@history_path, "#{file_name}-#{now}.row_history.md")
-      self.class.save @history.to_a, File.join(@history_path, "#{file_name}-#{now}.history.md")
+      self.class.save @histories.to_a, File.join(@history_path, "#{file_name}-#{now}.history.md")
     end
 
     class << self

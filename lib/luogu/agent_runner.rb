@@ -1,27 +1,44 @@
+# frozen_string_literal: true
+
 module Luogu
-  class AgentRunner
-    attr_accessor :system_prompt_template, :user_input_prompt_template
-    attr_reader :session, :histories
+  class AgentRunner < Base
+    setting :templates do
+      setting :system, default: PromptTemplate.load_template('agent_system.md.erb')
+      setting :user, default: PromptTemplate.load_template('agent_input.md.erb')
+      setting :tool, default: PromptTemplate.load_template('agent_tool_input.md.erb')
+    end
 
-    def initialize(system_prompt_template: nil, user_input_prompt_template: nil, tools_response_prompt_template: nil, session: Session.new)
-      @system_prompt_template = system_prompt_template || load_system_prompt_default_template
-      @user_input_prompt_template = user_input_prompt_template || load_user_input_prompt_default_template
-      @tools_response_prompt_template = tools_response_prompt_template || load_tools_response_prompt_default
+    setting :run_agent_retries, default: Application.config.run_agent_retries
 
-      @agents = []
-      @session = session
+    setting :provider do
+      setting :parameter_model, default: ->() {
+        OpenAI::ChatRequestParams.new(
+          model: 'gpt-3.5-turbo',
+          stop: %W[\nObservation: \n\tObservation:],
+          temperature: 0
+        )
+      }
+      setting :request, default: ->(params) { OpenAI.chat(params: params) }
+      setting :parse, default: ->(response) { OpenAI.chat_response_handle(response) }
+      setting :find_final_answer, default: ->(content) { OpenAI.find_final_answer(content) }
+      setting :history_limit, default: Application.config.openai.history_limit
+    end
 
-      @chatgpt_request_body = Luogu::OpenAI::ChatRequestBody.new(temperature: 0)
-      @chatgpt_request_body.stop = ["\nObservation:", "\n\tObservation:"]
-      @limit_history = ENV.fetch('OPENAI_LIMIT_HISTORY', '6').to_i * 2
-      @histories = HistoryQueue.new @limit_history
-
+    attr_reader :request_params, :agents
+    def initialize()
+      @request_params = provider.parameter_model.call
+      @histories = HistoryQueue.new provider.history_limit
       @last_user_input = ''
+      @agents = []
       @tools_response = []
     end
 
-    def openai_configuration(&block)
-      block.call @chatgpt_request_body
+    def provider
+      config.provider
+    end
+
+    def templates
+      config.templates
     end
 
     def register(agent)
@@ -30,126 +47,69 @@ module Luogu
       self
     end
 
-    def request(messages)
-      @chatgpt_request_body.messages = messages
-      response = client.chat(params: @chatgpt_request_body.to_h)
-      if response.code == 200
-        response.parse
-      else
-        logger.error response.body.to_s
-        raise OpenAI::RequestError
+    def run(text)
+      @last_user_input = text
+      messages = create_messages(
+        [{role: "user", content: templates.user.result(binding)}]
+      )
+      request(messages)
+    end
+    alias_method :chat, :run
+
+    def create_messages(messages)
+      [
+        { role: "system", content: templates.system.result(binding) }
+      ] + @histories.to_a + messages
+    end
+
+    def request(messages, run_agent_retries: 0)
+      logger.debug "request chat: #{messages}"
+      @request_params.messages = messages
+      response = provider.request.call(@request_params.to_h)
+      unless response.code == 200
+        logger.error response.body
+        raise RequestError
       end
-    end
-
-    def user_input_prompt_template
-      @user_input_prompt_template.result binding
-    end
-
-    def system_prompt_template
-      @system_prompt_template.result binding
-    end
-
-    def tools_response_prompt_template
-      @tools_response_prompt_template.result binding
-    end
-
-    def find_final_answer(content)
-      if content.is_a?(Hash) && content['action'] == 'Final Answer'
-        content['action_input']
+      content = provider.parse.call(response)
+      logger.debug content
+      if (answer = self.find_and_save_final_answer(content))
+        logger.info "final answer: #{answer}"
+        answer
       elsif content.is_a?(Array)
-        result = content.find { |element| element["action"] == "Final Answer" }
-        if result
-          result["action_input"]
-        else
-          nil
-        end
-      else
-        nil
+        run_agents(content, messages, run_agent_retries: run_agent_retries)
       end
     end
 
     def find_and_save_final_answer(content)
-      if answer = self.find_final_answer(content)
-        self.save_history(answer)
+      if (answer = provider.find_final_answer.call(content))
+        @histories.enqueue({role: "user", content: @last_user_input})
+        @histories.enqueue({role: "assistant", content: answer})
         answer
       else
         nil
       end
     end
 
-    def save_history(finnal_answer)
-      @histories.enqueue({role: "user", content: @last_user_input})
-      @histories.enqueue({role: "assistant", content: finnal_answer})
-    end
-
-    def parse_json(markdown)
-      json_regex = /```json(.+?)```/im
-      json_blocks = markdown.scan(json_regex)
-      result_json = nil
-      json_blocks.each do |json_block|
-        json_string = json_block[0]
-        result_json = JSON.parse(json_string)
-      end
-      
-      if result_json.nil?
-        JSON.parse markdown
-      else
-        result_json
-      end
-    end
-
-    def create_messages(messages)
-      [{role: "system", content: self.system_prompt_template}] + @histories.to_a + messages
-    end
-
-    def request_chat(messages)
-      logger.debug "request chat: #{messages}"
-      response = request messages
-      content = self.parse_json response.dig("choices", 0, "message", "content")
-      logger.debug content
-      if answer = self.find_and_save_final_answer(content)
-        logger.info "finnal answer: #{answer}"
-      elsif content.is_a?(Array)
-        self.run_agents(content, messages)
-      end
-    end
-
-    def chat(message)
-      @last_user_input = message
-      messages = self.create_messages([{role: "user", content: self.user_input_prompt_template}])
-      self.request_chat(messages)
-    end
-
-    def run_agents(agents, _messages_)
-      if answer = self.find_and_save_final_answer(agents)
-        logger.info "finnal answer: #{answer}"
+    def run_agents(agents, _messages_, run_agent_retries: 0)
+      return if run_agent_retries > config.run_agent_retries
+      run_agent_retries += 1
+      if (answer = find_and_save_final_answer(agents))
+        logger.info "final answer: #{answer}"
         return
       end
       @tools_response = []
       agents.each do |agent|
         agent_class = Module.const_get(agent['action'])
-        logger.info "running #{agent_class}"
+        logger.info "#{run_agent_retries} running #{agent_class} input: #{agent['action_input']}"
         response = agent_class.new.call(agent['action_input'])
         @tools_response << {name: agent['action'], response: response}
       end
-      messages = _messages_ + [{role: "assistant", content: agents.to_json}, {role: "user", content: self.tools_response_prompt_template}]
-      self.request_chat messages
+      messages = _messages_ + [
+        { role: "assistant", content: agents.to_json },
+        { role: "user", content: templates.tool.result(binding) }
+      ]
+      request messages, run_agent_retries: run_agent_retries
     end
 
-    private
-    def load_system_prompt_default_template
-      PromptTemplate.load_template('agent_system.md.erb')
-    end
-
-    def load_user_input_prompt_default_template
-      PromptTemplate.load_template('agent_input.md.erb')
-    end
-
-    def load_tools_response_prompt_default
-      PromptTemplate.load_template('agent_tool_input.md.erb')
-    end
-  end
-
-  class AssertionError < StandardError
   end
 end

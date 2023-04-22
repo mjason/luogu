@@ -1,0 +1,9 @@
+module Luogu
+  class Client
+    self.@client: untyped
+
+    def self.client: -> untyped
+
+    def chat: -> untyped
+  end
+end
