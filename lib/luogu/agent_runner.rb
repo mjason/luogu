@@ -24,7 +24,7 @@ module Luogu
       setting :history_limit, default: Application.config.openai.history_limit
     end
 
-    attr_reader :request_params, :agents
+    attr_reader :request_params, :agents, :histories
     def initialize()
       @request_params = provider.parameter_model.call
       @histories = HistoryQueue.new provider.history_limit
