@@ -80,7 +80,7 @@ module Luogu::OpenAI
       @system = {}
     end
 
-    def system(text: nil, file_: nil)
+    def system(text: nil, file: nil)
       data = text || File.read(file)
       @system = {role: "system", content: data}
       self
