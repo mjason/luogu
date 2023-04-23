@@ -5,6 +5,10 @@ module Luogu::OpenAI
                                      :top_p, :n, :stream, :stop,
                                      :max_tokens, :presence_penalty,
                                      :frequency_penalty, :logit_bias, :user)
+    def initialize(*args)
+      super(*(args.first || {}).values_at(*self.class.members))
+    end
+    
     def to_h
       super.reject { |_, v| v.nil? }
     end
