@@ -142,7 +142,7 @@ end
 - 0.1.15：http库替换成HTTP.rb并且加入了重试机制，默认为3次，可通过设置环境变量OPENAI_REQUEST_RETRIES来设置次数
 - 0.1.16：增加对agent的支持
 - 0.2.0：重构了代码，agent的支持基本达到可用状态，具体看`bin/agent.rb`示例，有破坏性更新，不兼容0.1.x的agent写法
-- 0.2.2: 增加了 AIUI 客户端，具体情况示例，openai的接口加入message类用于快速拼接messages，具体看 lib/luogu/openai.rb
+- 0.2.3: 增加了 AIUI 客户端，具体情况示例，openai的接口加入message类用于快速拼接messages，具体看 lib/luogu/openai.rb
 
 ## License
 
