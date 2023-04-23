@@ -8,6 +8,7 @@ require 'ostruct'
 require 'benchmark'
 require 'erb'
 require 'logger'
+require 'securerandom'
 
 require "dry/cli"
 require 'dry-configurable'
@@ -28,6 +29,8 @@ require_relative "agent_runner"
 
 require_relative 'openai'
 require_relative 'terminal'
+
+require_relative 'aiui'
 
 class String
   def cover_chinese

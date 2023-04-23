@@ -12,6 +12,11 @@ module Luogu
       setting :temperature, default: ENV.fetch('OPENAI_TEMPERATURE', 1).to_i
     end
 
+    setting :aiui do
+      setting :id, default: ENV.fetch('AIUI_APP_ID')
+      setting :key, default: ENV.fetch('AIUI_APP_KEY')
+    end
+
     setting :run_agent_retries, default: ENV.fetch('RUN_AGENT_RETRIES', 5).to_i
 
     setting :logger, reader: true,

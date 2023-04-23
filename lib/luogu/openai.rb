@@ -74,5 +74,41 @@ module Luogu::OpenAI
     end
   end
 
+  class Messages
+    def initialize
+      @messages = []
+      @system = {}
+    end
+
+    def system(text: nil, file_: nil)
+      data = text || File.read(file)
+      @system = {role: "system", content: data}
+      self
+    end
+
+    def user(text: nil, file: nil)
+      data = text || File.read(file)
+      @messages << {role: "user", content: data}
+      self
+    end
+
+    def assistant(text: nil, file: nil)
+      data = text || File.read(file)
+      @messages << {role: "assistant", content: data}
+      self
+    end
+
+    def to_a
+      @messages.unshift @system
+    end
+
+    class << self
+      def create
+        self.new
+      end
+    end
+
+  end
+
   module_function :chat, :client, :parse_json, :chat_response_handle, :find_final_answer, :get_content
 end
