@@ -9,6 +9,7 @@ require 'benchmark'
 require 'erb'
 require 'logger'
 require 'securerandom'
+require 'shellwords'
 
 require "dry/cli"
 require 'dry-configurable'
@@ -31,6 +32,7 @@ require_relative 'openai'
 require_relative 'terminal'
 
 require_relative 'aiui'
+require_relative 'utils'
 
 class String
   def cover_chinese

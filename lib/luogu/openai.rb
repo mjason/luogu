@@ -49,6 +49,8 @@ module Luogu::OpenAI
     else
       result_json
     end
+  rescue => e
+    raise e, "Input must be JSON and contain action and action_input."
   end
 
   def chat_response_handle(response)

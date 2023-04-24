@@ -67,15 +67,24 @@ module Luogu
       @request_params.messages = messages
       response = provider.request.call(@request_params.to_h)
       unless response.code == 200
-        logger.error response.body
-        raise RequestError
+        logger.error response.body.to_s
+        raise RequestError, response.body.to_s
       end
-      content = provider.parse.call(response)
+
+      begin
+        content = Luogu.wrap_array(provider.parse.call(response))
+      rescue => error
+        logger.error error.message
+        return "error! #{error.message}"
+      end
+
+
       logger.debug content
+
       if (answer = self.find_and_save_final_answer(content))
         logger.info "final answer: #{answer}"
         answer
-      elsif content.is_a?(Array)
+      else
         run_agents(content, messages, run_agent_retries: run_agent_retries)
       end
     end

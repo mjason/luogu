@@ -24,5 +24,5 @@ runner
   .register(CalculatorAgent)
 
 runner.run("明天广州的天气怎么样")
-runner.run("后天呢")
+runner.run("翻译一个错误成英文：输入必须是JSON并且包含action和action_input")
 runner.run("那么我应该穿什么样的衣服")
