@@ -1,6 +1,10 @@
 # frozen_string_literal: true
 
 module Luogu::OpenAI
+  extend Dry::Configurable
+
+  setting :after_parse_json, default: ->(data) { data }
+
   class ChatRequestParams < Struct.new(:model, :messages, :temperature,
                                      :top_p, :n, :stream, :stop,
                                      :max_tokens, :presence_penalty,
@@ -45,12 +49,14 @@ module Luogu::OpenAI
     end
 
     if result_json.nil?
-      JSON.parse markdown
+      result_json = JSON.parse markdown
     else
       result_json
     end
+    Luogu::OpenAI.config.after_parse_json.call(result_json)
   rescue => e
-    raise e, "Input must be JSON and contain action and action_input."
+    Luogu::Application.logger.error "parse json error: #{markdown}"
+    Luogu::OpenAI.config.after_parse_json.call(markdown)
   end
 
   def chat_response_handle(response)

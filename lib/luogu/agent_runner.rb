@@ -9,6 +9,8 @@ module Luogu
     end
 
     setting :run_agent_retries, default: Application.config.run_agent_retries
+    setting :mode, default: :agent # route 路由模式 agent 代理模式
+    setting :route_mode_response_handle, default: ->(tool_responses) { tool_responses&.first.fetch(:response, nil) }
 
     setting :provider do
       setting :parameter_model, default: ->() {
@@ -117,7 +119,11 @@ module Luogu
         { role: "assistant", content: agents.to_json },
         { role: "user", content: templates.tool.result(binding) }
       ]
-      request messages, run_agent_retries: run_agent_retries
+      if config.mode == :agent
+        request messages, run_agent_retries: run_agent_retries
+      else
+        config.route_mode_response_handle.call @tools_response
+      end
     end
 
   end
