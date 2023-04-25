@@ -3,7 +3,16 @@
 module Luogu::OpenAI
   extend Dry::Configurable
 
-  setting :after_parse_json, default: ->(data) { data }
+  setting :after_parse_json, default: ->(data) { 
+    action_params = {}
+    regx = /"([^"]+)"\s*:\s*("[^"]+"|\d+)/
+    data.scan(regx).each do |regx_val|
+      key = regx_val[0].gsub("\"", "")
+      value = regx_val[1].gsub("\"", "")
+      action_params[key] = value
+    end
+    action_params
+  }
 
   class ChatRequestParams < Struct.new(:model, :messages, :temperature,
                                      :top_p, :n, :stream, :stop,
