@@ -12,14 +12,14 @@ RESPONSE FORMAT INSTRUCTIONS
 When responding to me please, please output a response in one of two formats:
 
 **Option 1:**
-Use this if you want the human to use a tool.
+Use this if you want humans to use the tools.
 Markdown code snippet formatted in the following schema:
 
 ```json
-{
+[{
   "action": string \ The action to take. Must be one of <%= @agents.map do |a| a.name end.join(', ') %>
   "action_input": string \ The input to the action
-}
+}]
 ```
 
 **Option #2:**
@@ -34,6 +34,6 @@ Use this if you want to respond directly to the human. Markdown code snippet for
 
 USER'S INPUT
 --------------------
-Here is the user's input (remember to respond with a markdown code snippet of a json blob with a single action, and NOTHING else):
+Here is the user's input (Remember to respond to a single or multiple actions with a json blob of markdown code snippets, and NOTHING else):
 
 <%= @last_user_input %>

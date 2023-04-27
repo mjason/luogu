@@ -14,8 +14,12 @@ module Luogu
         @_input_desc_ = content
       end
 
-      def name
-        self.to_s
+      def name(agent_name)
+        @_name_ = agent_name
+      end
+
+      def agent_name
+        @_name_ || self.to_s
       end
 
       def description

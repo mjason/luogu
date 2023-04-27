@@ -28,6 +28,7 @@ require_relative "cli"
 require_relative "agent"
 require_relative "agent_runner"
 
+require_relative 'xinghuo'
 require_relative 'openai'
 require_relative 'terminal'
 

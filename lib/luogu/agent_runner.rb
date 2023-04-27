@@ -31,7 +31,7 @@ module Luogu
       @request_params = provider.parameter_model.call
       @histories = HistoryQueue.new provider.history_limit
       @last_user_input = ''
-      @agents = []
+      @agents = {}
       @tools_response = []
     end
 
@@ -45,7 +45,7 @@ module Luogu
 
     def register(agent)
       raise AssertionError.new('agent must inherit from Luogu::Agent') unless agent < Agent
-      @agents << agent
+      @agents[agent.agent_name] = agent
       self
     end
 
@@ -59,9 +59,13 @@ module Luogu
     alias_method :chat, :run
 
     def create_messages(messages)
-      [
-        { role: "system", content: templates.system.result(binding) }
-      ] + @histories.to_a + messages
+      if templates.system.nil?
+        @histories.to_a + messages
+      else
+        [
+          { role: "system", content: templates.system.result(binding) }
+        ] + @histories.to_a + messages
+      end
     end
 
     def request(messages, run_agent_retries: 0)
@@ -110,7 +114,7 @@ module Luogu
       end
       @tools_response = []
       agents.each do |agent|
-        agent_class = Module.const_get(agent['action'])
+        agent_class = @agents[agent['action']]
         logger.info "#{run_agent_retries} running #{agent_class} input: #{agent['action_input']}"
         response = agent_class.new.call(agent['action_input'])
         @tools_response << {name: agent['action'], response: response}

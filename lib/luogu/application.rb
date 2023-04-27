@@ -12,6 +12,14 @@ module Luogu
       setting :temperature, default: ENV.fetch('OPENAI_TEMPERATURE', 1).to_i
     end
 
+    setting :xinghuo do
+      setting :access_token, default: ENV.fetch('XINGHUO_ACCESS_TOKEN')
+      setting :retries, default: ENV.fetch('XINGHUO_REQUEST_RETRIES', 3).to_i
+      setting :host, default: ENV.fetch('XINGHUO_HOST', 'https://integration-api.iflyos.cn/')
+      setting :history_limit, default: ENV.fetch('XINGHUO_LIMIT_HISTORY', '6').to_i * 2
+      setting :temperature, default: ENV.fetch('XINGHUO_TEMPERATURE', 1).to_i
+    end
+
     setting :aiui do
       setting :id, default: ENV.fetch('AIUI_APP_ID')
       setting :key, default: ENV.fetch('AIUI_APP_KEY')
