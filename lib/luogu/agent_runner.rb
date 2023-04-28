@@ -116,7 +116,7 @@ module Luogu
       agents.each do |agent|
         agent_class = @agents[agent['action']]
         logger.info "#{run_agent_retries} running #{agent_class} input: #{agent['action_input']}"
-        response = agent_class.new.call(agent['action_input'])
+        response = agent_class.new(@last_user_input).call(agent['action_input'])
         @tools_response << {name: agent['action'], response: response}
       end
       messages = _messages_ + [

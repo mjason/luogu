@@ -61,6 +61,9 @@ module Luogu
       setting :tool, default: PromptTemplate.load_template('xinghuo_agent_tool_input.md.erb')
     end
 
+    setting :agents, default: []
+    setting :handle_action_nil, default: ->(text) { { 'action' => 'Final Answer', 'action_input' => text } }
+
     def find_final_answer(content)
       if content.is_a?(Hash) && content['action'] == 'Final Answer'
         content['action_input']
@@ -81,15 +84,16 @@ module Luogu
     end
 
     def parse_text(text)
-      # Luogu::Application.logger.info "parse_text: #{text}"
+      Luogu::Application.logger.info "parse_text: #{text}"
       final_answer = text.match(/最终答案：(.*)/)&.captures&.first&.strip
-      action = text.match(/工具调用：(.*)/)&.captures&.first&.strip
+      action = text.match(/工具调用：(.*)/)&.captures&.first&.strip&.gsub(/[[:punct:]]/, '')
       action_input = text.match(/工具输入：(.*)/)&.captures&.first&.strip
-
-      if action && action_input
-        { 'action' => action, 'action_input' => action_input }
-      elsif final_answer
+      if final_answer
         { 'action' => 'Final Answer', 'action_input' => final_answer }
+      elsif action == '无' || action_input == '无'
+        Luogu::Xinghuo.config.handle_action_nil.call(text)
+      elsif action && action_input && Luogu::Xinghuo.config.agents.keys.include?(action) && action != '无' && action_input != '无'
+        { 'action' => action, 'action_input' => action_input }
       else
         { 'action' => 'Final Answer', 'action_input' => text }
       end

@@ -1,6 +1,12 @@
 module Luogu
   class Agent
 
+    def initialize(row_input=nil)
+      @row_input = row_input
+    end
+
+    attr_reader :row_input
+
     def call(input)
       raise NotImplementedError, "call method must be implemented in subclass"
     end
@@ -14,12 +20,12 @@ module Luogu
         @_input_desc_ = content
       end
 
-      def name(agent_name)
+      def set_name(agent_name)
         @_name_ = agent_name
       end
 
       def agent_name
-        @_name_ || self.to_s
+        (@_name_ || self.to_s).gsub(/[[:punct:]]/, '')
       end
 
       def description

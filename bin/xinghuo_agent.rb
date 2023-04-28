@@ -4,7 +4,7 @@ require 'irb'
 include Luogu
 
 class WeatherAgent < Agent
-  name "天气查询"
+  set_name "天气查询"
   desc "仅能查询天气信息，工具输入要求是能够表达意图的文本"
 
   def call(input)
@@ -13,21 +13,12 @@ class WeatherAgent < Agent
   end
 end
 
-class CalculatorAgent < Agent
-  name "家居控制"
-  desc "仅能做家居控制，工具输入要求是能够表达意图的文本"
+class SmartAgent < Agent
+  set_name "智能家居控制助理"
+  desc "使用自然语言控制家里的电器(例如：打开空调)，工具输入要求是能够表达意图的文本"
 
   def call(input)
-    "好的，已经帮你设置好了"
-  end
-end
-
-class FinalAnswerAgent < Agent
-  name "智能问答"
-  desc "根据用户问题提供准确的回答"
-
-  def call(input)
-    "好的，已经帮你设置好了"
+    "搞定，已经按照你的要求完了所有控制"
   end
 end
 
@@ -39,11 +30,18 @@ end
 
 runner = AgentRunner.new
 runner
-  # .register(WeatherAgent)
-  .register(CalculatorAgent)
-  .register(FinalAnswerAgent)
+  .register(SmartAgent)
+  .register(WeatherAgent)
+  # .register(FinalAnswerAgent)
 
-# runner.run("一加一等于多少")
+Luogu::Xinghuo.configure do |config|
+  config.agents = runner.agents
+  config.handle_action_nil = ->(text) {
+    { 'action' => 'Final Answer', 'action_input' => "不好意思，我不理解你的意思" }
+  }
+end
+
+runner.run("一加一等于多少")
 # runner.run("我老婆今晚生日，你帮我设置一下家里的客厅环境")
 # runner.run("罗纳尔多是谁")
 # runner.run("翻译一个错误成英文：输入必须是JSON并且包含action和action_input")
@@ -52,5 +50,6 @@ runner
 YAML.load_file("./prompt.test.yml").each do |prompt|
   Luogu.println "prompt: #{prompt}"
   runner.run(prompt)
+  # Luogu.println "histories #{runner.histories.to_a}"
   Luogu.println "----------------------------------------"
 end
