@@ -81,16 +81,17 @@ module Luogu
     end
 
     def parse_text(text)
+      # Luogu::Application.logger.info "parse_text: #{text}"
       final_answer = text.match(/最终答案：(.*)/)&.captures&.first&.strip
       action = text.match(/工具调用：(.*)/)&.captures&.first&.strip
       action_input = text.match(/工具输入：(.*)/)&.captures&.first&.strip
 
-      if final_answer
-        { 'action' => 'Final Answer', 'action_input' => final_answer }
-      elsif action && action_input
+      if action && action_input
         { 'action' => action, 'action_input' => action_input }
+      elsif final_answer
+        { 'action' => 'Final Answer', 'action_input' => final_answer }
       else
-        nil
+        { 'action' => 'Final Answer', 'action_input' => text }
       end
     end
 
